@@ -3,6 +3,7 @@ package com.softserve.itacademy.service;
 import com.softserve.itacademy.dto.userDto.UpdateUserDto;
 import com.softserve.itacademy.dto.userDto.UserDto;
 import com.softserve.itacademy.dto.userDto.UserDtoConverter;
+import com.softserve.itacademy.exception.NullEntityReferenceException;
 import com.softserve.itacademy.model.User;
 import com.softserve.itacademy.model.UserRole;
 import com.softserve.itacademy.repository.UserRepository;
@@ -26,7 +27,7 @@ public class UserService {
         log.info("Creating a new user: {}", user);
         if (user == null) {
             log.error("User creation failed: User is null");
-            throw new RuntimeException("User cannot be null");
+            throw new NullEntityReferenceException("User cannot be null");
         }
         User savedUser = userRepository.save(user);
         log.info("User created successfully with ID: {}", savedUser.getId());
@@ -43,6 +44,12 @@ public class UserService {
 
     public UserDto update(UpdateUserDto updateUserDto) {
         log.info("Updating user with ID: {}", updateUserDto.getId());
+
+        if (updateUserDto == null) {
+            log.error("User update failed: User DTO is null");
+            throw new NullEntityReferenceException("User DTO cannot be null");
+        }
+
         User user = userRepository.findById(updateUserDto.getId()).orElseThrow(() -> {
             log.error("User with ID {} not found", updateUserDto.getId());
             return new EntityNotFoundException("User with id " + updateUserDto.getId() + " not found");
@@ -52,6 +59,7 @@ public class UserService {
             log.debug("Updating role for user with ID: {}", user.getId());
             user.setRole(updateUserDto.getRole());
         }
+
         userDtoConverter.fillFields(user, updateUserDto);
         User updatedUser = userRepository.save(user);
         log.info("User with ID {} updated successfully", updatedUser.getId());
@@ -61,6 +69,10 @@ public class UserService {
     public void delete(long id) {
         log.info("Deleting user with ID: {}", id);
         User user = readById(id);
+        if (user == null) {
+            log.error("User deletion failed: User with ID {} not found", id);
+            throw new EntityNotFoundException("User with id " + id + " not found");
+        }
         userRepository.delete(user);
         log.info("User with ID {} deleted successfully", id);
     }

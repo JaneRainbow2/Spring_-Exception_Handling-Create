@@ -1,9 +1,11 @@
 package com.softserve.itacademy.service;
 
+import com.softserve.itacademy.exception.NullEntityReferenceException;
 import com.softserve.itacademy.model.State;
 import com.softserve.itacademy.dto.StateDto;
 import com.softserve.itacademy.repository.StateRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,8 +22,9 @@ public class StateService {
 
     public State create(State state) {
         log.debug("Creating state {}", state);
-        if (state == null){
-            throw new RuntimeException("State cannot be null");
+        if (state == null) {
+            log.error("Failed to create state: state is null");
+            throw new NullEntityReferenceException("State cannot be null");
         }
 
         state = stateRepository.save(state);
@@ -33,36 +36,37 @@ public class StateService {
         log.debug("Fetching state with id: {}", id);
         State state = stateRepository.findById(id)
                 .orElseThrow(() -> {
-                    log.error("State with id {} doesn't exists", id);
-                    return new RuntimeException("State with id " + id + " not found");
+                    log.error("State with id {} doesn't exist", id);
+                    return new EntityNotFoundException("State with id " + id + " not found");
                 });
-        log.debug("Get state {}", state);
+        log.debug("Fetched state {}", state);
         return state;
     }
 
     public State update(State state) {
         log.debug("Updating state {}", state);
-        if (state == null){
-            throw new RuntimeException("State cannot be null");
+        if (state == null) {
+            log.error("Failed to update state: state is null");
+            throw new NullEntityReferenceException("State cannot be null");
         }
-        readById(state.getId());
+
+        readById(state.getId());  // Ensure the state exists before updating
         state = stateRepository.save(state);
         log.debug("State {} was updated", state);
         return state;
-
     }
 
     public void delete(long id) {
         log.debug("Deleting state with id {}", id);
-        State state = readById(id);
+        State state = readById(id);  // Ensure the state exists before deleting
         stateRepository.delete(state);
-        log.debug("State {} was deleted", state);
+        log.debug("State with id {} was deleted", id);
     }
 
     public List<State> getAll() {
         log.debug("Fetching all states");
         List<State> states = stateRepository.findAllByOrderById();
-        log.debug("Get all states ");
+        log.debug("Fetched all states");
         return states;
     }
 
@@ -74,26 +78,27 @@ public class StateService {
             log.debug("State found: {}", state);
             return state;
         }
-        log.warn("No state found with name: {}", name);
-        throw new RuntimeException("State with name '" + name + "' not found");
+
+        log.error("No state found with name: {}", name);
+        throw new EntityNotFoundException("State with name '" + name + "' not found");
     }
 
     public List<StateDto> findAll() {
-        log.debug("Fetching all states as StateDto}");
+        log.debug("Fetching all states as StateDto");
         List<StateDto> dtos = stateRepository.findAll()
                 .stream()
                 .map(this::toDto)
                 .toList();
-        log.debug("Get all states as StateDto");
+        log.debug("Fetched all states as StateDto");
         return dtos;
     }
 
     private StateDto toDto(State state) {
-        log.debug("Converting {} from State object to StateDto object", state);
+        log.debug("Converting {} from State to StateDto", state);
         StateDto dto = StateDto.builder()
                 .name(state.getName())
                 .build();
-        log.debug("Converted {} from State object to StateDto object", state);
+        log.debug("Converted {} to StateDto", state);
         return dto;
     }
 }

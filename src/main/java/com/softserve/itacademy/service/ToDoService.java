@@ -1,5 +1,6 @@
 package com.softserve.itacademy.service;
 
+import com.softserve.itacademy.exception.NullEntityReferenceException;
 import com.softserve.itacademy.model.ToDo;
 import com.softserve.itacademy.repository.ToDoRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,7 +22,7 @@ public class ToDoService {
         log.info("Creating a new ToDo: {}", todo);
         if (todo == null) {
             log.error("ToDo creation failed: ToDo is null");
-            throw new RuntimeException("ToDo cannot be null");
+            throw new NullEntityReferenceException("ToDo cannot be null");
         }
         ToDo savedToDo = todoRepository.save(todo);
         log.info("ToDo created successfully with ID: {}", savedToDo.getId());
@@ -32,14 +33,14 @@ public class ToDoService {
         log.info("Reading ToDo with ID: {}", id);
         return todoRepository.findById(id).orElseThrow(() -> {
             log.error("ToDo with ID {} not found", id);
-            return new EntityNotFoundException("ToDo with id " + id + " not found");
+            throw new EntityNotFoundException("ToDo with id " + id + " not found");
         });
     }
 
     public ToDo update(ToDo todo) {
         if (todo == null) {
             log.error("ToDo update failed: ToDo is null");
-            throw new RuntimeException("ToDo cannot be null");
+            throw new NullEntityReferenceException("ToDo cannot be null");
         }
 
         log.info("Updating ToDo with ID: {}", todo.getId());
@@ -52,7 +53,7 @@ public class ToDoService {
 
     public void delete(long id) {
         log.info("Deleting ToDo with ID: {}", id);
-        ToDo todo = readById(id);
+        ToDo todo = readById(id); // Check if ToDo exists before deleting
         todoRepository.delete(todo);
         log.info("ToDo with ID {} deleted successfully", id);
     }
